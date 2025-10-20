@@ -64,11 +64,23 @@ def configuracoes():
 @app.route('/api/config', methods=['GET'])
 def get_config():
     config = load_config()
-    # Retornar apenas se a API key existe (não a chave em si por segurança)
+    
+    # Verificar qual IA está configurada
+    has_gemini = bool(config.get('gemini_api_key'))
+    has_ollama = False
+    
+    try:
+        response = requests.get('http://localhost:11434/api/tags', timeout=2)
+        has_ollama = response.status_code == 200
+    except:
+        pass
+    
     return jsonify({
-        'has_gemini_key': bool(config.get('gemini_api_key')),
+        'has_gemini_key': has_gemini,
         'gemini_api_key': config.get('gemini_api_key', ''),
-        'ollama_model': config.get('ollama_model', 'llama2')
+        'ollama_model': config.get('ollama_model', 'llama2'),
+        'has_ollama': has_ollama,
+        'active_ia': 'gemini' if has_gemini else ('ollama' if has_ollama else None)
     })
 
 # API: Salvar configurações
@@ -137,21 +149,32 @@ def get_clientes():
 def chat_ollama():
     try:
         pergunta = request.json.get('pergunta')
-        modelo = request.json.get('modelo', 'llama2')
+        modelo = request.json.get('modelo')
+        
+        # Se não veio no request, carregar do config salvo
+        if not modelo:
+            config = load_config()
+            modelo = config.get('ollama_model', 'llama2')
         
         # Carregar todo o histórico de ligações
         data = load_data()
         contexto = construir_contexto(data['ligacoes'], request.json.get('cliente'))
         
-        # Preparar prompt com contexto
+        # Preparar prompt com contexto (instruir a responder em Markdown enxuto)
         prompt = f"""Você é um assistente especializado em análise de relacionamento com clientes.
-        
+
+INSTRUÇÕES DE FORMATAÇÃO (obrigatórias):
+- Responda em Markdown conciso.
+- Use títulos (##), listas com bullets e negritos para pontos chave.
+- Traga no máximo 6 bullets por seção.
+- Inclua uma seção final com Próximos Passos (bullets práticos e objetivos).
+
 HISTÓRICO DE LIGAÇÕES:
 {contexto}
 
 PERGUNTA DO USUÁRIO: {pergunta}
 
-Analise o histórico e responda de forma clara, objetiva e útil. Identifique padrões, necessidades e oportunidades."""
+Agora responda seguindo as instruções acima."""
 
         # Chamar Ollama
         response = requests.post(
@@ -180,7 +203,7 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
     except requests.exceptions.ConnectionError:
         return jsonify({
             'success': False,
-            'error': 'Não foi possível conectar ao Ollama. Certifique-se de que está instalado e rodando (ollama serve).'
+            'error': 'Não foi possível conectar ao Ollama. Vá em Configurações para iniciar o servidor ou verifique se está rodando (ollama serve).'
         }), 500
     except Exception as e:
         return jsonify({
@@ -195,10 +218,15 @@ def chat_gemini():
         pergunta = request.json.get('pergunta')
         api_key = request.json.get('api_key')
         
+        # Se não veio no request, carregar do config salvo
+        if not api_key:
+            config = load_config()
+            api_key = config.get('gemini_api_key', '')
+        
         if not api_key:
             return jsonify({
                 'success': False,
-                'error': 'API Key do Google Gemini não fornecida.'
+                'error': 'API Key do Google Gemini não configurada. Vá em Configurações para salvar sua chave.'
             }), 400
         
         # Carregar todo o histórico de ligações
@@ -215,8 +243,8 @@ PERGUNTA DO USUÁRIO: {pergunta}
 
 Analise o histórico e responda de forma clara, objetiva e útil. Identifique padrões, necessidades e oportunidades."""
 
-        # Chamar Google Gemini API
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}'
+        # Chamar Google Gemini API (usando gemini-2.5-flash - modelo correto e gratuito)
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}'
         
         response = requests.post(
             url,
@@ -236,7 +264,7 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
             return jsonify({
                 'success': True,
                 'resposta': resposta_texto,
-                'modelo': 'gemini-pro'
+                'modelo': 'gemini-2.5-flash'
             })
         else:
             return jsonify({
@@ -288,6 +316,47 @@ def get_ollama_models():
         return jsonify({'success': False, 'models': []})
     except:
         return jsonify({'success': False, 'models': []})
+
+# API: Listar modelos disponíveis do Google Gemini
+@app.route('/api/gemini/models', methods=['GET'])
+def list_gemini_models():
+    try:
+        api_key = request.args.get('api_key')
+        if not api_key:
+            config = load_config()
+            api_key = config.get('gemini_api_key', '')
+        
+        if not api_key:
+            return jsonify({'success': False, 'error': 'API Key não fornecida'})
+        
+        # Listar modelos disponíveis
+        url = f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            models = []
+            for model in data.get('models', []):
+                models.append({
+                    'name': model.get('name', ''),
+                    'displayName': model.get('displayName', ''),
+                    'supportedMethods': model.get('supportedGenerationMethods', [])
+                })
+            return jsonify({
+                'success': True,
+                'models': models,
+                'raw': data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Erro {response.status_code}: {response.text}'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 # API: Verificar status do Ollama
 @app.route('/api/ollama/status', methods=['GET'])
@@ -441,6 +510,14 @@ def clear_all_data():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # Configurar encoding do console para UTF-8
+    import sys
+    if sys.platform == 'win32':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except:
+            pass
+    
     # Verificar se deve controlar Ollama automaticamente
     auto_ollama = os.environ.get('AUTO_OLLAMA', 'false').lower() == 'true'
     
@@ -448,17 +525,22 @@ if __name__ == '__main__':
         try:
             from ollama_manager import setup_ollama_auto_control
             setup_ollama_auto_control()
-            print("🤖 Controle automático do Ollama ativado!")
+            print("Controle automatico do Ollama ativado!")
         except ImportError:
-            print("⚠️ Módulo ollama_manager não encontrado")
+            print("Modulo ollama_manager nao encontrado")
     
-    print("🚀 Sistema de Gestão de Ligações com IA iniciado!")
-    print("📱 Acesse: http://localhost:5000")
-    print("⚙️ Configurações: http://localhost:5000/configuracoes")
-    print("\n💡 Dicas:")
-    print("   - Para usar Ollama: certifique-se de executar 'ollama serve'")
-    print("   - Para usar Gemini: obtenha uma API key gratuita em https://makersuite.google.com/app/apikey")
-    print("   - Acesse /configuracoes para gerenciar IAs e dados")
+    print("=" * 60)
+    print("Sistema de Gestao de Ligacoes com IA iniciado!")
+    print("=" * 60)
+    print("Acesse: http://localhost:5000")
+    print("Configuracoes: http://localhost:5000/configuracoes")
+    print("\nDicas:")
+    print("  - Para usar Ollama: certifique-se de executar 'ollama serve'")
+    print("  - Para usar Gemini: obtenha uma API key gratuita")
+    print("    em https://makersuite.google.com/app/apikey")
+    print("  - Acesse /configuracoes para gerenciar IAs e dados")
+    print("=" * 60)
+    print()
     
     app.run(debug=True, port=5000)
 

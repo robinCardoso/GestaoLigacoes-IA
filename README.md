@@ -1,5 +1,7 @@
 # 📞 Sistema de Gestão de Ligações com IA
 
+[![Build](https://github.com/robinCardoso/GestaoLigacoes-IA/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/robinCardoso/GestaoLigacoes-IA/actions/workflows/main.yml)
+
 Sistema completo para registrar suas ligações com clientes e obter insights inteligentes usando IA **100% gratuita**!
 
 ## ✨ Funcionalidades
