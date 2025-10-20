@@ -311,6 +311,47 @@ def get_ollama_models():
     except:
         return jsonify({'success': False, 'models': []})
 
+# API: Listar modelos disponíveis do Google Gemini
+@app.route('/api/gemini/models', methods=['GET'])
+def list_gemini_models():
+    try:
+        api_key = request.args.get('api_key')
+        if not api_key:
+            config = load_config()
+            api_key = config.get('gemini_api_key', '')
+        
+        if not api_key:
+            return jsonify({'success': False, 'error': 'API Key não fornecida'})
+        
+        # Listar modelos disponíveis
+        url = f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            models = []
+            for model in data.get('models', []):
+                models.append({
+                    'name': model.get('name', ''),
+                    'displayName': model.get('displayName', ''),
+                    'supportedMethods': model.get('supportedGenerationMethods', [])
+                })
+            return jsonify({
+                'success': True,
+                'models': models,
+                'raw': data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Erro {response.status_code}: {response.text}'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 # API: Verificar status do Ollama
 @app.route('/api/ollama/status', methods=['GET'])
 def get_ollama_status():
