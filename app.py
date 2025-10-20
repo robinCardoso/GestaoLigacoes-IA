@@ -108,6 +108,11 @@ def index():
 def configuracoes():
     return render_template('configuracoes.html')
 
+# Rota de chat em tela cheia
+@app.route('/chat')
+def chat_full():
+    return render_template('chat.html')
+
 # API: Obter configurações
 @app.route('/api/config', methods=['GET'])
 def get_config():

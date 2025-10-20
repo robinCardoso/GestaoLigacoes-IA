@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat com IA - Tela Cheia</title>
+    <style>
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f8;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar a.btn { background: rgba(255,255,255,0.18); padding: 8px 12px; border-radius: 8px; color: #fff; text-decoration: none; }
+        .status {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; margin: 10px 14px;
+        }
+        .main {
+            display: grid; grid-template-rows: 1fr auto; gap: 10px; height: calc(100vh - 120px);
+            margin: 0 14px 12px;
+        }
+        .messages {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; overflow-y: auto;
+        }
+        .message { margin-bottom: 12px; }
+        .message .who { font-size: 12px; opacity: .7; display: block; margin-bottom: 4px; }
+        .message.ai { color: #222; }
+        .message.user { text-align: right; }
+        .composer { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+        .composer input { padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
+        .composer button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 600; }
+        .loading { display: none; font-size: 13px; color: #666; }
+        .loading.active { display: block; }
+        .badge { padding: 2px 8px; border-radius: 999px; background: #e9f7ef; color: #155724; font-size: 12px; }
+        .muted { color: #666; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <a class="btn" href="/">← Voltar</a>
+            <strong>Chat com IA</strong>
+        </div>
+        <a class="btn" href="/configuracoes">⚙️ Configurações</a>
+    </div>
+
+    <div class="status" id="iaStatus">Detectando IA ativa…</div>
+
+    <div class="main">
+        <div class="messages" id="messages">
+            <div class="message ai">
+                <span class="who">🤖 Assistente IA</span>
+                <div class="muted">Faça uma pergunta. Exemplos:<br>• Resuma as conversas do cliente X<br>• O que devo perguntar no próximo contato?<br>• Principais oportunidades desta semana</div>
+            </div>
+        </div>
+        <div>
+            <div class="loading" id="loading">Analisando…</div>
+            <div class="composer">
+                <input id="clienteFiltro" placeholder="Filtrar por cliente (opcional)">
+                
+            </div>
+            <div class="composer" style="margin-top:8px;">
+                <input id="input" placeholder="Digite sua pergunta e pressione Enter">
+                <button onclick="send()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeIA = null;
+
+        async function bootstrap() {
+            const cfg = await (await fetch('/api/config')).json();
+            const status = document.getElementById('iaStatus');
+            if (cfg.active_ia === 'gemini') {
+                activeIA = 'gemini';
+                status.innerHTML = `✅ IA Ativa: <span class="badge">Gemini</span> &nbsp; Modelo: <strong>gemini-2.5-flash</strong>`;
+            } else if (cfg.active_ia === 'ollama') {
+                activeIA = 'ollama';
+                status.innerHTML = `✅ IA Ativa: <span class="badge">Ollama</span> &nbsp; Modelo: <strong>${cfg.ollama_model}</strong>`;
+            } else {
+                status.innerHTML = `⚠️ Nenhuma IA configurada. Vá em Configurações.`;
+            }
+        }
+
+        function append(type, html) {
+            const box = document.getElementById('messages');
+            const el = document.createElement('div');
+            el.className = `message ${type}`;
+            el.innerHTML = `<span class="who">${type==='user'?'👤 Você':'🤖 Assistente IA'}</span>` + html;
+            box.appendChild(el);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function md(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/^###\s+(.*)$/gmi, '<h4>$1</h4>')
+                .replace(/^##\s+(.*)$/gmi, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\-\s+(.*)$/gmi, '<li>$1</li>')
+                .replace(/(?:\r\n|\r|\n){2,}/g, '<br/><br/>')
+                .replace(/(?:\r\n|\r|\n)/g, '<br/>');
+            html = html.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
+            return html;
+        }
+
+        async function send() {
+            const input = document.getElementById('input');
+            const pergunta = input.value.trim();
+            if (!pergunta || !activeIA) return;
+            append('user', md(pergunta));
+            input.value='';
+            document.getElementById('loading').classList.add('active');
+            const payload = { pergunta, cliente: document.getElementById('clienteFiltro').value };
+            try {
+                const res = await fetch(`/api/chat/${activeIA}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const json = await res.json();
+                document.getElementById('loading').classList.remove('active');
+                if (json.success) append('ai', md(json.resposta)); else append('ai', md('❌ '+json.error));
+            } catch (e) {
+                document.getElementById('loading').classList.remove('active');
+                append('ai', md('❌ Erro ao comunicar com a IA.'));
+            }
+        }
+
+        document.addEventListener('keydown', (e)=>{
+            if (e.key==='Enter' && document.activeElement===document.getElementById('input')) send();
+        });
+
+        bootstrap();
+    </script>
+</body>
+</html>
+
+
