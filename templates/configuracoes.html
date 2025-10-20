@@ -470,6 +470,26 @@
                     <button class="btn btn-warning" onclick="importData()">📥 Importar Dados</button>
                     <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
                 </div>
+
+                <div class="config-section">
+                    <h3>🧠 Conversas com a IA</h3>
+                    <div class="form-group">
+                        <label>Salvar conversas com a IA?</label>
+                        <select id="saveAIConversations">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Retenção (dias):</label>
+                        <input type="number" id="retentionDays" min="0" value="90">
+                    </div>
+                    <div class="form-group" style="display:flex; gap:8px;">
+                        <button class="btn" onclick="saveAIConfig()">💾 Salvar Preferências</button>
+                        <button class="btn btn-secondary" onclick="exportAIConversations()">📤 Exportar Conversas</button>
+                        <button class="btn btn-danger" onclick="clearAIConversations()">🗑️ Limpar Conversas</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -500,9 +520,42 @@
                 if (config.ollama_model) {
                     document.getElementById('preferredModel').value = config.ollama_model;
                 }
+
+                // Conversas IA
+                if (config.save_ai_conversations !== undefined) {
+                    document.getElementById('saveAIConversations').value = String(Boolean(config.save_ai_conversations));
+                }
+                if (config.retention_days !== undefined) {
+                    document.getElementById('retentionDays').value = config.retention_days;
+                }
             } catch (error) {
                 console.log('Erro ao carregar configurações:', error);
             }
+        }
+
+        function saveAIConfig() {
+            const saveAI = document.getElementById('saveAIConversations').value === 'true';
+            const retention = parseInt(document.getElementById('retentionDays').value || '90', 10);
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ save_ai_conversations: saveAI, retention_days: retention })
+            })
+            .then(r=>r.json())
+            .then(()=> showStatus('✅ Preferências de conversas salvas!', 'success'))
+            .catch(()=> showStatus('❌ Erro ao salvar preferências', 'error'))
+        }
+
+        function exportAIConversations() {
+            window.open('/api/ai/conversas/export', '_blank');
+        }
+
+        function clearAIConversations() {
+            if (!confirm('Tem certeza que deseja apagar TODAS as conversas com a IA?')) return;
+            fetch('/api/ai/conversas/clear', { method: 'POST' })
+              .then(r=>r.json())
+              .then(()=> showStatus('✅ Conversas apagadas!', 'success'))
+              .catch(()=> showStatus('❌ Erro ao apagar conversas', 'error'))
         }
 
         // Verificar status do Ollama

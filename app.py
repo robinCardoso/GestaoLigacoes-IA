@@ -13,6 +13,7 @@ app = Flask(__name__)
 # Arquivos de dados
 DATA_FILE = 'ligacoes.json'
 CONFIG_FILE = 'config.json'
+CONVERSAS_FILE = 'conversas_ia.json'
 
 # Carregar dados existentes
 def load_data():
@@ -24,6 +25,17 @@ def load_data():
 # Salvar dados
 def save_data(data):
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# Conversas IA
+def load_conversas():
+    if os.path.exists(CONVERSAS_FILE):
+        with open(CONVERSAS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {'conversas': []}
+
+def save_conversas(data):
+    with open(CONVERSAS_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # Carregar configurações
@@ -38,7 +50,7 @@ def load_config():
                 except:
                     config['gemini_api_key'] = ''
             return config
-    return {'gemini_api_key': '', 'ollama_model': 'llama2'}
+    return {'gemini_api_key': '', 'ollama_model': 'llama2', 'save_ai_conversations': False, 'retention_days': 90}
 
 # Salvar configurações
 def save_config(config):
@@ -49,6 +61,42 @@ def save_config(config):
     
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config_to_save, f, ensure_ascii=False, indent=2)
+
+def apply_retention():
+    """Apaga conversas mais antigas que a retenção configurada."""
+    config = load_config()
+    retention_days = int(config.get('retention_days', 90) or 90)
+    if retention_days <= 0:
+        return
+    conv = load_conversas()
+    lim = datetime.now().timestamp() - (retention_days * 86400)
+    conv['conversas'] = [c for c in conv.get('conversas', []) if _parse_iso(c.get('data_hora')).timestamp() >= lim]
+    save_conversas(conv)
+
+def _parse_iso(s):
+    try:
+        return datetime.fromisoformat(s)
+    except Exception:
+        return datetime.now()
+
+def registrar_conversa(pergunta: str, resposta: str, ia: str, modelo: str, cliente: str | None):
+    config = load_config()
+    if not config.get('save_ai_conversations', False):
+        return
+    conv = load_conversas()
+    novo_id = (conv['conversas'][-1]['id'] + 1) if conv['conversas'] else 1
+    registro = {
+        'id': novo_id,
+        'data_hora': datetime.now().isoformat(),
+        'ia': ia,
+        'modelo': modelo,
+        'cliente': cliente or '',
+        'pergunta': pergunta or '',
+        'resposta': resposta or ''
+    }
+    conv['conversas'].append(registro)
+    save_conversas(conv)
+    apply_retention()
 
 # Rota principal
 @app.route('/')
@@ -79,6 +127,8 @@ def get_config():
         'has_gemini_key': has_gemini,
         'gemini_api_key': config.get('gemini_api_key', ''),
         'ollama_model': config.get('ollama_model', 'llama2'),
+        'save_ai_conversations': bool(config.get('save_ai_conversations', False)),
+        'retention_days': int(config.get('retention_days', 90) or 90),
         'has_ollama': has_ollama,
         'active_ia': 'gemini' if has_gemini else ('ollama' if has_ollama else None)
     })
@@ -89,6 +139,32 @@ def save_config_route():
     config_data = request.json
     save_config(config_data)
     return jsonify({'success': True, 'message': 'Configurações salvas com sucesso!'})
+
+# Conversas IA - listar
+@app.route('/api/ai/conversas', methods=['GET'])
+def list_ai_conversas():
+    cliente = request.args.get('cliente')
+    conv = load_conversas()
+    itens = conv.get('conversas', [])
+    if cliente:
+        itens = [c for c in itens if c.get('cliente', '').lower() == cliente.lower()]
+    return jsonify({'success': True, 'conversas': itens})
+
+# Conversas IA - exportar
+@app.route('/api/ai/conversas/export', methods=['GET'])
+def export_ai_conversas():
+    from flask import make_response
+    conv = load_conversas()
+    response = make_response(json.dumps(conv, ensure_ascii=False, indent=2))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = f'attachment; filename=conversas_ia_{datetime.now().strftime("%Y%m%d")}.json'
+    return response
+
+# Conversas IA - limpar
+@app.route('/api/ai/conversas/clear', methods=['POST'])
+def clear_ai_conversas():
+    save_conversas({'conversas': []})
+    return jsonify({'success': True})
 
 # API: Listar todas as ligações
 @app.route('/api/ligacoes', methods=['GET'])
@@ -189,9 +265,12 @@ Agora responda seguindo as instruções acima."""
         
         if response.status_code == 200:
             resultado = response.json()
+            texto = resultado.get('response', '')
+            # salvar conversa
+            registrar_conversa(pergunta, texto, 'ollama', modelo, request.json.get('cliente'))
             return jsonify({
                 'success': True,
-                'resposta': resultado.get('response', ''),
+                'resposta': texto,
                 'modelo': modelo
             })
         else:
@@ -261,6 +340,8 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
         if response.status_code == 200:
             resultado = response.json()
             resposta_texto = resultado['candidates'][0]['content']['parts'][0]['text']
+            # salvar conversa
+            registrar_conversa(pergunta, resposta_texto, 'gemini', 'gemini-2.5-flash', request.json.get('cliente'))
             return jsonify({
                 'success': True,
                 'resposta': resposta_texto,
