@@ -384,7 +384,8 @@
                 <form id="formLigacao">
                     <div class="form-group">
                         <label>Cliente:</label>
-                        <input type="text" id="cliente" required placeholder="Nome do cliente">
+                        <input type="text" id="cliente" required placeholder="Nome do cliente" list="clientesDatalist">
+                        <datalist id="clientesDatalist"></datalist>
                     </div>
                     <div class="form-group">
                         <label>Data da Ligação:</label>
@@ -438,7 +439,8 @@
 
             <div class="form-group">
                 <label>Filtrar por Cliente (opcional):</label>
-                <input type="text" id="clienteFiltro" placeholder="Digite o nome do cliente para análise específica">
+                <input type="text" id="clienteFiltro" placeholder="Digite o nome do cliente para análise específica" list="clientesFiltroDatalist">
+                <datalist id="clientesFiltroDatalist"></datalist>
             </div>
 
             <div class="chat-container">
@@ -548,6 +550,17 @@
                 const response = await fetch('/api/ligacoes');
                 const ligacoes = await response.json();
                 
+                // Preencher sugestões de clientes (datalist)
+                const uniqueClients = Array.from(new Set(ligacoes.map(l => l.cliente).filter(Boolean))).sort();
+                const clientesDatalist = document.getElementById('clientesDatalist');
+                const clientesFiltroDatalist = document.getElementById('clientesFiltroDatalist');
+                if (clientesDatalist) {
+                    clientesDatalist.innerHTML = uniqueClients.map(c => `<option value="${c}"></option>`).join('');
+                }
+                if (clientesFiltroDatalist) {
+                    clientesFiltroDatalist.innerHTML = uniqueClients.map(c => `<option value="${c}"></option>`).join('');
+                }
+
                 const list = document.getElementById('ligacoesList');
                 
                 if (ligacoes.length === 0) {
