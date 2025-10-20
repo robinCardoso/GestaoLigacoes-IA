@@ -1,7 +1,3 @@
-# Dados do sistema
-ligacoes.json
-config.json
-
 # Python
 __pycache__/
 *.py[cod]
@@ -11,27 +7,18 @@ __pycache__/
 env/
 venv/
 ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+.venv
 
-# Flask
-instance/
-.webassets-cache
+# Dados locais
+ligacoes.json
+conversas_ia.json
+config.json
 
-# IDEs
+# Variáveis de ambiente
+.env
+.env.local
+
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -42,9 +29,13 @@ instance/
 .DS_Store
 Thumbs.db
 
-# PyInstaller
-build/
-dist/
-*.spec
-*.egg-info/
+# Vercel
+.vercel
 
+# Logs
+*.log
+
+# Temporários
+temp/
+tmp/
+*.tmp

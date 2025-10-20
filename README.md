@@ -1,221 +1,189 @@
-# 📞 Sistema de Gestão de Ligações com IA
+# 🚀 Sistema de Gestão de Ligações com IA
 
-[![Build](https://github.com/robinCardoso/GestaoLigacoes-IA/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/robinCardoso/GestaoLigacoes-IA/actions/workflows/main.yml)
+Sistema web 100% online para gerenciar ligações de clientes com assistente de IA integrado (Google Gemini).
 
-Sistema completo para registrar suas ligações com clientes e obter insights inteligentes usando IA **100% gratuita**!
+[![Deploy no Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/robinCardoso/GestaoLigacoes-IA)
 
 ## ✨ Funcionalidades
 
-- ✅ **Registro Completo de Ligações**: Guarde todas as informações importantes de cada conversa
-- ✅ **Histórico Organizado**: Visualize todas as suas ligações de forma clara
-- ✅ **Estatísticas em Tempo Real**: Acompanhe total de ligações, clientes e mais
-- ✅ **Chat Inteligente com IA**: Faça perguntas sobre seus clientes e receba análises detalhadas
-- ✅ **2 Opções de IA**:
-  - **Ollama** (Local, privado, 100% offline)
-  - **Google Gemini** (Online, gratuito, API generosa)
-- ✅ **Interface Moderna e Intuitiva**: Design bonito e fácil de usar
-- ✅ **API Key Salva Automaticamente**: Configure uma vez, use sempre! 🔐
-- ✅ **Executável para Desktop**: Crie um .exe para usar sem Python
-- ✅ **Inicialização com 1 Clique**: Script .bat para Windows
+- 📞 **Registro de Ligações**: Grave detalhes de todas as conversas com clientes
+- 🤖 **Assistente IA**: Use Google Gemini para analisar conversas e obter insights
+- 💬 **Chat Dedicado**: Interface full-screen para conversas com a IA
+- 📊 **Histórico**: Armazene e consulte todas as ligações e conversas
+- 🔍 **Busca**: Filtros por cliente, data e muito mais
+- 📱 **Responsivo**: Funciona perfeitamente em desktop e mobile
+- ☁️ **100% Online**: Deploy no Vercel + dados no Supabase
 
-## 🚀 Como Instalar e Usar
+## 🛠️ Tecnologias
 
-### ⚡ FORMA MAIS FÁCIL (Windows)
+- **Frontend**: HTML, CSS, JavaScript
+- **Backend**: Python (Flask)
+- **IA**: Google Gemini API
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **Deploy**: Vercel
+- **Autenticação**: Session-based (UUID por usuário)
 
-**Duplo clique no arquivo:**
+## 🚀 Deploy
+
+### 1. Criar conta no Supabase
+
+1. Acesse [supabase.com](https://supabase.com) e crie uma conta
+2. Crie um novo projeto
+3. Copie a URL e a chave pública (anon key)
+
+### 2. Configurar banco de dados
+
+No Supabase SQL Editor, execute o script `sql/create_tables.sql`:
+
+```sql
+-- Copie e cole o conteúdo de sql/create_tables.sql
 ```
-INICIAR.bat
+
+### 3. Deploy no Vercel
+
+1. Faça fork deste repositório
+2. Acesse [vercel.com](https://vercel.com) e importe o projeto
+3. Configure as variáveis de ambiente:
+
+```env
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_KEY=sua-chave-publica-aqui
+SECRET_KEY=uma-chave-secreta-aleatoria
 ```
-Pronto! O sistema instala tudo automaticamente e abre no navegador! 🎉
 
----
+4. Deploy! 🎉
 
-### 🐍 Forma Tradicional (Todos os Sistemas)
+## 🔧 Desenvolvimento Local
 
-#### 1️⃣ Pré-requisitos
+### Pré-requisitos
 
-- Python 3.7 ou superior
-- Conexão com internet (apenas para Google Gemini)
+- Python 3.8+
+- Conta no Supabase (ou use armazenamento local)
 
-#### 2️⃣ Instalação
+### Instalação
 
-1. **Clone ou baixe este repositório**
-
-2. **Instale as dependências:**
 ```bash
+# Clone o repositório
+git clone https://github.com/robinCardoso/GestaoLigacoes-IA.git
+cd GestaoLigacoes-IA
+
+# Instale as dependências
 pip install -r requirements.txt
-```
 
-### 3️⃣ Configurar as IAs
+# Configure as variáveis de ambiente
+cp env.example .env
+# Edite .env com suas credenciais
 
-#### Opção A: Ollama (Local - 100% Privado)
-
-1. **Instale o Ollama:**
-   - Acesse: https://ollama.ai/download
-   - Baixe e instale para o seu sistema operacional
-
-2. **Baixe um modelo:**
-```bash
-ollama pull llama2
-```
-Ou outros modelos: `mistral`, `codellama`, `gemma`, etc.
-
-3. **Inicie o Ollama:**
-```bash
-ollama serve
-```
-
-#### Opção B: Google Gemini (Online - Gratuito)
-
-1. **Obtenha uma API Key gratuita:**
-   - Acesse: https://makersuite.google.com/app/apikey
-   - Faça login com sua conta Google
-   - Clique em "Create API Key"
-   - Copie sua chave
-
-2. **Cole a API Key na interface do sistema** quando selecionar o Gemini
-3. **Clique em "💾 Salvar"** - Sua chave ficará salva para sempre! 🔐
-
-### 4️⃣ Iniciar o Sistema
-
-**Opção A - Automático (abre navegador sozinho):**
-```bash
-python iniciar.py
-```
-
-**Opção B - Manual:**
-```bash
+# Execute o servidor
 python app.py
 ```
-E acesse: http://localhost:5000
 
-**Opção C - Windows (1 clique):**
-```
-Duplo clique em: INICIAR.bat
-```
+Acesse: `http://localhost:5000`
 
-**Opção D - Executável (.exe):**
-```bash
-# Criar o executável primeiro
-python criar_executavel.py
+## 📝 Configuração
 
-# Depois usar
-dist/GestaoLigacoes.exe
-```
+### Google Gemini API
 
-## 📖 Como Usar
+1. Acesse [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Crie uma nova API Key
+3. Configure no sistema em **⚙️ Configurações**
 
-### Registrar uma Ligação
+### Armazenamento
 
-1. Preencha o formulário "Nova Ligação"
-2. Informe:
-   - Nome do cliente
-   - Data da ligação
+- **Online (Supabase)**: Configure `SUPABASE_URL` e `SUPABASE_KEY`
+- **Local (Fallback)**: Sem configuração, usa arquivos JSON localmente
+
+## 🎯 Como Usar
+
+### 1. Registrar uma Ligação
+
+1. Preencha os campos:
+   - Nome do Cliente
+   - Data da Ligação
    - Duração
-   - Assuntos discutidos
-   - Notas detalhadas
-   - Próximos passos
-3. Clique em "Salvar Ligação"
+   - Assuntos Discutidos
+   - Notas
+   - Próximos Passos
+2. Clique em **Salvar Ligação**
 
-### Usar o Chat com IA
+### 2. Usar o Assistente IA
 
-1. **Selecione a IA** que deseja usar (Ollama ou Gemini)
-2. **Configure** (escolha o modelo ou insira API Key)
-3. **Faça perguntas**, por exemplo:
-   - "Quais são as principais necessidades do cliente João?"
-   - "Que assuntos foram mais discutidos esta semana?"
-   - "Quais clientes precisam de follow-up urgente?"
-   - "Resuma todas as conversas com a empresa XYZ"
+1. Configure sua API Key do Gemini em **⚙️ Configurações**
+2. Digite sua pergunta no chat
+3. A IA terá acesso a todas as ligações do cliente selecionado
+4. Receba insights e sugestões
 
-### Filtrar Análises por Cliente
+### 3. Chat Full-Screen
 
-- Use o campo "Filtrar por Cliente" no chat
-- A IA analisará apenas as ligações daquele cliente específico
+- Clique em **💬 Abrir Chat em Tela Cheia**
+- Aproveite uma interface dedicada para conversas longas
 
-## 💡 Exemplos de Perguntas para a IA
+## 📊 Estrutura do Banco (Supabase)
 
-- "Quais clientes mencionaram problemas com preços?"
-- "Que oportunidades de venda foram identificadas?"
-- "Liste os principais pontos de dor dos clientes"
-- "Qual cliente teve mais ligações este mês?"
-- "Resuma as necessidades do cliente [NOME]"
-- "Quais próximos passos estão pendentes?"
-- "Que padrões você identifica nas conversas?"
+### Tabela: `ligacoes`
+- `id`: ID único
+- `user_id`: ID do usuário
+- `cliente`: Nome do cliente
+- `data`: Data da ligação
+- `duracao`: Duração
+- `assuntos`: Assuntos discutidos
+- `notas`: Notas adicionais
+- `proximos_passos`: Próximos passos
+- `data_registro`: Data do registro
+- `created_at`: Data de criação
+- `updated_at`: Data de atualização
 
-## 🎯 Vantagens
+### Tabela: `conversas_ia`
+- `id`: ID único
+- `user_id`: ID do usuário
+- `ia`: Nome da IA (gemini)
+- `modelo`: Modelo usado
+- `cliente`: Cliente relacionado
+- `pergunta`: Pergunta feita
+- `resposta`: Resposta da IA
+- `data_hora`: Data e hora da conversa
 
-### Ollama
-- ✅ 100% gratuito e offline
-- ✅ Dados ficam no seu computador
-- ✅ Privacidade total
-- ✅ Sem limites de uso
-- ⚠️ Requer instalação
+### Tabela: `user_configs`
+- `id`: ID único
+- `user_id`: ID do usuário (único)
+- `gemini_api_key`: Chave API do Gemini (criptografada)
+- `save_ai_conversations`: Salvar conversas (boolean)
+- `retention_days`: Dias de retenção
 
-### Google Gemini
-- ✅ 100% gratuito (quota generosa)
-- ✅ Não precisa instalar nada localmente
-- ✅ Respostas rápidas
-- ✅ Acesso de qualquer lugar
-- ⚠️ Requer internet
+## 🔒 Segurança
 
-## 📁 Estrutura de Arquivos
+- ✅ Row Level Security (RLS) habilitado no Supabase
+- ✅ API Keys criptografadas com Base64
+- ✅ Cada usuário acessa apenas seus próprios dados
+- ✅ Session-based authentication
+- ✅ HTTPS em produção (Vercel)
 
-```
-.
-├── app.py                 # Backend (Flask + APIs)
-├── templates/
-│   └── index.html        # Interface web
-├── ligacoes.json         # Dados salvos (criado automaticamente)
-├── requirements.txt      # Dependências Python
-└── README.md            # Este arquivo
-```
+## 🤝 Contribuindo
 
-## 🔧 Tecnologias Utilizadas
+Contribuições são bem-vindas! Por favor:
 
-- **Backend**: Python + Flask
-- **Frontend**: HTML5, CSS3, JavaScript
-- **IA Local**: Ollama
-- **IA Online**: Google Gemini API
-- **Armazenamento**: JSON (local)
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
 
-## 🛡️ Segurança e Privacidade
+## 📄 Licença
 
-- ✅ Todos os dados ficam salvos **localmente** no seu computador
-- ✅ Nenhuma informação é enviada para servidores externos (exceto ao usar Gemini)
-- ✅ Você tem controle total dos seus dados
-- ✅ API Key do Gemini não é armazenada (apenas em memória)
+Este projeto é open source e está disponível sob a [MIT License](LICENSE).
 
-## 🐛 Solução de Problemas
+## 🙏 Agradecimentos
 
-### Erro ao conectar com Ollama
-- Verifique se o Ollama está instalado: `ollama --version`
-- Certifique-se de que está rodando: `ollama serve`
-- Verifique se baixou algum modelo: `ollama list`
+- Google Gemini pela IA gratuita e poderosa
+- Supabase pelo banco de dados gratuito
+- Vercel pelo hosting gratuito
+- Comunidade open source
 
-### Erro no Google Gemini
-- Verifique se a API Key está correta
-- Confirme se tem quota disponível em: https://makersuite.google.com/
-- Tente gerar uma nova API Key
+## 📞 Contato
 
-### Porta 5000 já está em uso
-- Mude a porta no arquivo `app.py` (última linha):
-```python
-app.run(debug=True, port=5001)  # Mude para 5001 ou outra porta
-```
-
-## 📝 Licença
-
-Este projeto é de código aberto e gratuito para uso pessoal e comercial.
-
-## 🤝 Contribuições
-
-Sugestões e melhorias são bem-vindas!
-
-## 📧 Suporte
-
-Se tiver dúvidas ou problemas, abra uma issue no repositório.
+- GitHub: [@robinCardoso](https://github.com/robinCardoso)
+- Projeto: [GestaoLigacoes-IA](https://github.com/robinCardoso/GestaoLigacoes-IA)
 
 ---
 
-**Desenvolvido com ❤️ para ajudar você a gerenciar melhor suas ligações com clientes!**
-
+**Feito com ❤️ para melhorar o relacionamento com clientes**

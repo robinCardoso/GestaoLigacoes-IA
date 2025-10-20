@@ -1,0 +1,16 @@
+# Ignorar arquivos de desenvolvimento
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env.local
+ligacoes.json
+conversas_ia.json
+config.json
+README_*.md
+*.bat
+*.exe
+dist/
+build/
+node_modules/
+

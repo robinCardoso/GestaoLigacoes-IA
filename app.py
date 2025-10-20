@@ -1,45 +1,129 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import json
 import os
 from datetime import datetime
 import requests
 import base64
-import subprocess
-import threading
-import time
+from dotenv import load_dotenv
+import uuid
+
+# Carregar variáveis de ambiente
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Arquivos de dados
+# Tentar importar Supabase
+USE_SUPABASE = False
+try:
+    from supabase_client import get_supabase, salvar_ligacao, listar_ligacoes, deletar_ligacao
+    from supabase_client import salvar_conversa, listar_conversas
+    from supabase_client import salvar_config_usuario, obter_config_usuario
+    USE_SUPABASE = bool(os.getenv('SUPABASE_URL'))
+    if USE_SUPABASE:
+        print("[OK] Usando Supabase para armazenamento")
+except ImportError:
+    print("[INFO] Supabase não disponível, usando armazenamento local")
+    USE_SUPABASE = False
+
+# Arquivos de dados (fallback local)
 DATA_FILE = 'ligacoes.json'
 CONFIG_FILE = 'config.json'
 CONVERSAS_FILE = 'conversas_ia.json'
 
-# Carregar dados existentes
+def get_user_id():
+    """Obtém ou cria um ID de usuário único"""
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    return session['user_id']
+
+# Carregar dados existentes (fallback local)
 def load_data():
+    """Carrega ligações do arquivo local"""
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {'ligacoes': [], 'clientes': {}}
 
-# Salvar dados
 def save_data(data):
+    """Salva ligações no arquivo local"""
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# Conversas IA
+# Funções de ligações com suporte a Supabase
+def obter_todas_ligacoes():
+    """Obtém todas as ligações (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        ligacoes_db = listar_ligacoes(user_id) or []
+        return {'ligacoes': ligacoes_db, 'clientes': {}}
+    else:
+        return load_data()
+
+def adicionar_ligacao(ligacao_data):
+    """Adiciona uma ligação (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        ligacao_data['user_id'] = user_id
+        return salvar_ligacao(ligacao_data)
+    else:
+        data = load_data()
+        ligacao_data['id'] = len(data['ligacoes']) + 1
+        data['ligacoes'].append(ligacao_data)
+        save_data(data)
+        return ligacao_data
+
+def remover_ligacao(ligacao_id):
+    """Remove uma ligação (Supabase ou local)"""
+    if USE_SUPABASE:
+        return deletar_ligacao(ligacao_id)
+    else:
+        data = load_data()
+        data['ligacoes'] = [l for l in data['ligacoes'] if l.get('id') != ligacao_id]
+        save_data(data)
+        return True
+
+# Conversas IA (fallback local)
 def load_conversas():
+    """Carrega conversas do arquivo local"""
     if os.path.exists(CONVERSAS_FILE):
         with open(CONVERSAS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {'conversas': []}
 
 def save_conversas(data):
+    """Salva conversas no arquivo local"""
     with open(CONVERSAS_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# Carregar configurações
-def load_config():
+# Funções de conversas com suporte a Supabase
+def obter_todas_conversas(cliente=None):
+    """Obtém todas as conversas (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        conversas_db = listar_conversas(user_id, cliente) or []
+        return {'conversas': conversas_db}
+    else:
+        conv = load_conversas()
+        if cliente:
+            conv['conversas'] = [c for c in conv['conversas'] if c.get('cliente') == cliente]
+        return conv
+
+def adicionar_conversa(conversa_data):
+    """Adiciona uma conversa (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        conversa_data['user_id'] = user_id
+        return salvar_conversa(conversa_data)
+    else:
+        conv = load_conversas()
+        conv['conversas'].append(conversa_data)
+        save_conversas(conv)
+        return conversa_data
+
+# Carregar configurações (fallback local)
+def load_config_local():
+    """Carrega configurações do arquivo local"""
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
@@ -50,17 +134,45 @@ def load_config():
                 except:
                     config['gemini_api_key'] = ''
             return config
-    return {'gemini_api_key': '', 'ollama_model': 'llama2', 'save_ai_conversations': False, 'retention_days': 90}
+    return {'gemini_api_key': '', 'ollama_model': 'mistral', 'save_ai_conversations': False, 'retention_days': 90}
 
-# Salvar configurações
-def save_config(config):
-    # Codificar API Key antes de salvar
+def save_config_local(config):
+    """Salva configurações no arquivo local"""
     config_to_save = config.copy()
     if 'gemini_api_key' in config_to_save and config_to_save['gemini_api_key']:
         config_to_save['gemini_api_key'] = base64.b64encode(config_to_save['gemini_api_key'].encode('utf-8')).decode('utf-8')
     
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config_to_save, f, ensure_ascii=False, indent=2)
+
+# Funções de config com suporte a Supabase
+def load_config():
+    """Carrega configurações (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        config = obter_config_usuario(user_id)
+        if not config:
+            config = {'gemini_api_key': '', 'ollama_model': 'mistral', 'save_ai_conversations': False, 'retention_days': 90}
+        # Decodificar API Key se existir
+        if 'gemini_api_key' in config and config['gemini_api_key']:
+            try:
+                config['gemini_api_key'] = base64.b64decode(config['gemini_api_key']).decode('utf-8')
+            except:
+                pass
+        return config
+    else:
+        return load_config_local()
+
+def save_config(config):
+    """Salva configurações (Supabase ou local)"""
+    if USE_SUPABASE:
+        user_id = get_user_id()
+        config_to_save = config.copy()
+        if 'gemini_api_key' in config_to_save and config_to_save['gemini_api_key']:
+            config_to_save['gemini_api_key'] = base64.b64encode(config_to_save['gemini_api_key'].encode('utf-8')).decode('utf-8')
+        return salvar_config_usuario(user_id, config_to_save)
+    else:
+        return save_config_local(config)
 
 def apply_retention():
     """Apaga conversas mais antigas que a retenção configurada."""
@@ -80,13 +192,12 @@ def _parse_iso(s):
         return datetime.now()
 
 def registrar_conversa(pergunta: str, resposta: str, ia: str, modelo: str, cliente: str | None):
+    """Salva uma conversa com IA (Supabase ou local)"""
     config = load_config()
     if not config.get('save_ai_conversations', False):
         return
-    conv = load_conversas()
-    novo_id = (conv['conversas'][-1]['id'] + 1) if conv['conversas'] else 1
+    
     registro = {
-        'id': novo_id,
         'data_hora': datetime.now().isoformat(),
         'ia': ia,
         'modelo': modelo,
@@ -94,9 +205,13 @@ def registrar_conversa(pergunta: str, resposta: str, ia: str, modelo: str, clien
         'pergunta': pergunta or '',
         'resposta': resposta or ''
     }
-    conv['conversas'].append(registro)
-    save_conversas(conv)
-    apply_retention()
+    
+    # Usar função que suporta Supabase
+    adicionar_conversa(registro)
+    
+    # Aplicar retenção apenas para armazenamento local
+    if not USE_SUPABASE:
+        apply_retention()
 
 # Rota principal
 @app.route('/')
@@ -149,17 +264,14 @@ def save_config_route():
 @app.route('/api/ai/conversas', methods=['GET'])
 def list_ai_conversas():
     cliente = request.args.get('cliente')
-    conv = load_conversas()
-    itens = conv.get('conversas', [])
-    if cliente:
-        itens = [c for c in itens if c.get('cliente', '').lower() == cliente.lower()]
-    return jsonify({'success': True, 'conversas': itens})
+    conv = obter_todas_conversas(cliente)
+    return jsonify({'success': True, 'conversas': conv.get('conversas', [])})
 
 # Conversas IA - exportar
 @app.route('/api/ai/conversas/export', methods=['GET'])
 def export_ai_conversas():
     from flask import make_response
-    conv = load_conversas()
+    conv = obter_todas_conversas()
     response = make_response(json.dumps(conv, ensure_ascii=False, indent=2))
     response.headers['Content-Type'] = 'application/json'
     response.headers['Content-Disposition'] = f'attachment; filename=conversas_ia_{datetime.now().strftime("%Y%m%d")}.json'
@@ -168,44 +280,32 @@ def export_ai_conversas():
 # Conversas IA - limpar
 @app.route('/api/ai/conversas/clear', methods=['POST'])
 def clear_ai_conversas():
-    save_conversas({'conversas': []})
+    if not USE_SUPABASE:
+        save_conversas({'conversas': []})
+    # TODO: Implementar clear no Supabase
     return jsonify({'success': True})
 
 # API: Listar todas as ligações
 @app.route('/api/ligacoes', methods=['GET'])
 def get_ligacoes():
-    data = load_data()
+    data = obter_todas_ligacoes()
     return jsonify(data['ligacoes'])
 
 # API: Adicionar nova ligação
 @app.route('/api/ligacoes', methods=['POST'])
 def add_ligacao():
-    data = load_data()
     ligacao = request.json
-    ligacao['id'] = len(data['ligacoes']) + 1
     ligacao['data_registro'] = datetime.now().isoformat()
     
-    data['ligacoes'].append(ligacao)
+    # Adicionar ligação usando Supabase ou local
+    ligacao_salva = adicionar_ligacao(ligacao)
     
-    # Atualizar informações do cliente
-    cliente_nome = ligacao['cliente']
-    if cliente_nome not in data['clientes']:
-        data['clientes'][cliente_nome] = {
-            'nome': cliente_nome,
-            'total_ligacoes': 0,
-            'ultima_ligacao': None
-        }
-    
-    data['clientes'][cliente_nome]['total_ligacoes'] += 1
-    data['clientes'][cliente_nome]['ultima_ligacao'] = ligacao['data_registro']
-    
-    save_data(data)
-    return jsonify({'success': True, 'ligacao': ligacao})
+    return jsonify({'success': True, 'ligacao': ligacao_salva})
 
 # API: Obter ligação específica
 @app.route('/api/ligacoes/<int:ligacao_id>', methods=['GET'])
 def get_ligacao(ligacao_id):
-    data = load_data()
+    data = obter_todas_ligacoes()
     ligacao = next((l for l in data['ligacoes'] if l['id'] == ligacao_id), None)
     if ligacao:
         return jsonify(ligacao)
@@ -214,16 +314,20 @@ def get_ligacao(ligacao_id):
 # API: Deletar ligação
 @app.route('/api/ligacoes/<int:ligacao_id>', methods=['DELETE'])
 def delete_ligacao(ligacao_id):
-    data = load_data()
-    data['ligacoes'] = [l for l in data['ligacoes'] if l['id'] != ligacao_id]
-    save_data(data)
+    remover_ligacao(ligacao_id)
     return jsonify({'success': True})
 
 # API: Listar clientes
 @app.route('/api/clientes', methods=['GET'])
 def get_clientes():
-    data = load_data()
-    return jsonify(list(data['clientes'].values()))
+    data = obter_todas_ligacoes()
+    # Extrair lista única de clientes das ligações
+    clientes = {}
+    for ligacao in data['ligacoes']:
+        cliente_nome = ligacao.get('cliente', '')
+        if cliente_nome and cliente_nome not in clientes:
+            clientes[cliente_nome] = {'nome': cliente_nome}
+    return jsonify(list(clientes.values()))
 
 # API: Chat com IA (Ollama)
 @app.route('/api/chat/ollama', methods=['POST'])
@@ -481,9 +585,16 @@ def get_ollama_status():
             'online': False
         })
 
-# API: Iniciar servidor Ollama
+# API: Iniciar servidor Ollama (Desabilitado em produção online)
 @app.route('/api/ollama/start', methods=['POST'])
 def start_ollama():
+    return jsonify({
+        'success': False,
+        'error': 'Ollama não está disponível em ambiente online. Use apenas Gemini.'
+    })
+
+# TODO: Remover função antiga quando necessário
+def start_ollama_old():
     try:
         # Verificar se já está rodando
         response = requests.get('http://localhost:11434/api/tags', timeout=2)
@@ -526,9 +637,16 @@ def start_ollama():
             'error': f'Erro ao iniciar servidor: {str(e)}'
         })
 
-# API: Parar servidor Ollama
+# API: Parar servidor Ollama (Desabilitado em produção online)
 @app.route('/api/ollama/stop', methods=['POST'])
 def stop_ollama():
+    return jsonify({
+        'success': False,
+        'error': 'Ollama não está disponível em ambiente online.'
+    })
+
+# TODO: Remover função antiga quando necessário
+def stop_ollama_old():
     try:
         # No Windows, tentar parar o processo
         if os.name == 'nt':
