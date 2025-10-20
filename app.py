@@ -225,8 +225,8 @@ PERGUNTA DO USUÁRIO: {pergunta}
 
 Analise o histórico e responda de forma clara, objetiva e útil. Identifique padrões, necessidades e oportunidades."""
 
-        # Chamar Google Gemini API
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}'
+        # Chamar Google Gemini API (usando gemini-1.5-flash - mais rápido e gratuito)
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}'
         
         response = requests.post(
             url,
@@ -246,7 +246,7 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
             return jsonify({
                 'success': True,
                 'resposta': resposta_texto,
-                'modelo': 'gemini-pro'
+                'modelo': 'gemini-1.5-flash'
             })
         else:
             return jsonify({
