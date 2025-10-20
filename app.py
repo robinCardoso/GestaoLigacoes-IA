@@ -235,7 +235,29 @@ def chat_ollama():
         # Se não veio no request, carregar do config salvo
         if not modelo:
             config = load_config()
-            modelo = config.get('ollama_model', 'llama2')
+            modelo = config.get('ollama_model', 'mistral')
+        
+        # Verificar se o modelo existe antes de tentar usar
+        try:
+            models_response = requests.get('http://localhost:11434/api/tags', timeout=5)
+            if models_response.status_code == 200:
+                models_data = models_response.json()
+                available_models = [m['name'] for m in models_data.get('models', [])]
+                if not available_models:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Nenhum modelo instalado no Ollama. Execute: ollama pull llama2'
+                    }), 400
+                if modelo not in available_models:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Modelo "{modelo}" não encontrado. Modelos disponíveis: {", ".join(available_models)}'
+                    }), 400
+        except requests.exceptions.ConnectionError:
+            return jsonify({
+                'success': False,
+                'error': 'Ollama não está rodando. Vá em Configurações para iniciar o servidor.'
+            }), 500
         
         # Carregar todo o histórico de ligações
         data = load_data()
@@ -281,7 +303,7 @@ Agora responda seguindo as instruções acima."""
         else:
             return jsonify({
                 'success': False,
-                'error': f'Erro ao conectar com Ollama: {response.status_code}'
+                'error': f'Erro ao conectar com Ollama: {response.status_code} - {response.text}'
             }), 500
             
     except requests.exceptions.ConnectionError:
