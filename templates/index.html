@@ -15,7 +15,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 12px;
+            font-size: 14px; /* base menor */
         }
 
         .container {
@@ -25,29 +26,29 @@
 
         header {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            margin-bottom: 16px;
             text-align: center;
         }
 
         h1 {
             color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.6em;
+            margin-bottom: 4px;
         }
 
         .subtitle {
             color: #666;
-            font-size: 1.1em;
+            font-size: 0.95em;
         }
 
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
         @media (max-width: 1200px) {
@@ -58,37 +59,37 @@
 
         .card {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
         }
 
         .card h2 {
             color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.8em;
+            margin-bottom: 10px;
+            font-size: 1.2em;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #333;
             font-weight: 600;
         }
 
         input, textarea, select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             transition: border 0.3s;
         }
 
@@ -99,16 +100,16 @@
 
         textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 80px;
         }
 
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 30px;
+            padding: 8px 14px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -176,25 +177,27 @@
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 500px;
+            height: 420px;
         }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            border: 2px solid #e0e0e0;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 12px;
+            margin-bottom: 10px;
             background: #f9f9f9;
         }
 
         .message {
-            margin-bottom: 15px;
-            padding: 12px 18px;
-            border-radius: 12px;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
             max-width: 80%;
             word-wrap: break-word;
+            line-height: 1.35;
+            font-size: 13px;
         }
 
         .message.user {
@@ -219,7 +222,7 @@
 
         .chat-input-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .chat-input-group input {
@@ -238,10 +241,10 @@
 
         .ligacao-item {
             background: #f8f9ff;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
             transition: transform 0.2s;
         }
 
@@ -323,26 +326,26 @@
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
 
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 12px;
             border-radius: 10px;
             text-align: center;
         }
 
         .stat-number {
-            font-size: 2.5em;
+            font-size: 1.6em;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .stat-label {
-            font-size: 0.9em;
+            font-size: 0.8em;
             opacity: 0.9;
         }
     </style>
@@ -679,7 +682,7 @@
                 document.getElementById('loadingChat').classList.remove('active');
                 
                 if (result.success) {
-                    addMessage('ai', result.resposta);
+                    addMessage('ai', renderMarkdown(result.resposta));
                 } else {
                     addMessage('ai', `❌ Erro: ${result.error}. Verifique as configurações da IA.`);
                 }
@@ -700,6 +703,23 @@
             
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Renderização simples de Markdown (títulos, negrito, listas e quebras de linha)
+        function renderMarkdown(md) {
+            if (!md) return '';
+            let html = md
+                .replace(/^###\s+(.*)$/gmi, '<h4>$1</h4>')
+                .replace(/^##\s+(.*)$/gmi, '<h3>$1</h3>')
+                .replace(/^#\s+(.*)$/gmi, '<h2>$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n\n-/g, '\n-')
+                .replace(/^\-\s+(.*)$/gmi, '<li>$1</li>')
+                .replace(/(?:\r\n|\r|\n){2,}/g, '<br/><br/>')
+                .replace(/(?:\r\n|\r|\n)/g, '<br/>');
+            // Envolver itens de lista em <ul>
+            html = html.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
+            return html;
         }
 
         // Tecla Enter no chat

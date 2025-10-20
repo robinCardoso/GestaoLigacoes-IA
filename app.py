@@ -160,15 +160,21 @@ def chat_ollama():
         data = load_data()
         contexto = construir_contexto(data['ligacoes'], request.json.get('cliente'))
         
-        # Preparar prompt com contexto
+        # Preparar prompt com contexto (instruir a responder em Markdown enxuto)
         prompt = f"""Você é um assistente especializado em análise de relacionamento com clientes.
-        
+
+INSTRUÇÕES DE FORMATAÇÃO (obrigatórias):
+- Responda em Markdown conciso.
+- Use títulos (##), listas com bullets e negritos para pontos chave.
+- Traga no máximo 6 bullets por seção.
+- Inclua uma seção final com Próximos Passos (bullets práticos e objetivos).
+
 HISTÓRICO DE LIGAÇÕES:
 {contexto}
 
 PERGUNTA DO USUÁRIO: {pergunta}
 
-Analise o histórico e responda de forma clara, objetiva e útil. Identifique padrões, necessidades e oportunidades."""
+Agora responda seguindo as instruções acima."""
 
         # Chamar Ollama
         response = requests.post(
