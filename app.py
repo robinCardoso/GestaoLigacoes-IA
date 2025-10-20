@@ -137,7 +137,12 @@ def get_clientes():
 def chat_ollama():
     try:
         pergunta = request.json.get('pergunta')
-        modelo = request.json.get('modelo', 'llama2')
+        modelo = request.json.get('modelo')
+        
+        # Se não veio no request, carregar do config salvo
+        if not modelo:
+            config = load_config()
+            modelo = config.get('ollama_model', 'llama2')
         
         # Carregar todo o histórico de ligações
         data = load_data()
@@ -180,7 +185,7 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
     except requests.exceptions.ConnectionError:
         return jsonify({
             'success': False,
-            'error': 'Não foi possível conectar ao Ollama. Certifique-se de que está instalado e rodando (ollama serve).'
+            'error': 'Não foi possível conectar ao Ollama. Vá em Configurações para iniciar o servidor ou verifique se está rodando (ollama serve).'
         }), 500
     except Exception as e:
         return jsonify({
@@ -195,10 +200,15 @@ def chat_gemini():
         pergunta = request.json.get('pergunta')
         api_key = request.json.get('api_key')
         
+        # Se não veio no request, carregar do config salvo
+        if not api_key:
+            config = load_config()
+            api_key = config.get('gemini_api_key', '')
+        
         if not api_key:
             return jsonify({
                 'success': False,
-                'error': 'API Key do Google Gemini não fornecida.'
+                'error': 'API Key do Google Gemini não configurada. Vá em Configurações para salvar sua chave.'
             }), 400
         
         # Carregar todo o histórico de ligações
