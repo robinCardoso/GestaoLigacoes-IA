@@ -216,24 +216,14 @@ def chat_full():
 def get_config():
     config = load_config()
     
-    # Verificar qual IA está configurada
-    has_gemini = bool(config.get('gemini_api_key'))
-    has_ollama = False
-    
-    try:
-        response = requests.get('http://localhost:11434/api/tags', timeout=2)
-        has_ollama = response.status_code == 200
-    except:
-        pass
+    # Verificar se Gemini está configurado
+    has_gemini = bool(GEMINI_API_KEY)
     
     return jsonify({
         'has_gemini_key': has_gemini,
-        'gemini_api_key': config.get('gemini_api_key', ''),
-        'ollama_model': config.get('ollama_model', 'llama2'),
         'save_ai_conversations': bool(config.get('save_ai_conversations', False)),
         'retention_days': int(config.get('retention_days', 90) or 90),
-        'has_ollama': has_ollama,
-        'active_ia': 'gemini' if has_gemini else ('ollama' if has_ollama else None)
+        'active_ia': 'gemini' if has_gemini else None
     })
 
 # API: Salvar configurações
@@ -312,16 +302,16 @@ def get_clientes():
             clientes[cliente_nome] = {'nome': cliente_nome}
     return jsonify(list(clientes.values()))
 
-# API: Chat com IA (Ollama - REMOVIDO)
+# API: Chat com IA - Rota antiga do Ollama (removida)
 @app.route('/api/chat/ollama', methods=['POST'])
 def chat_ollama():
     return jsonify({
         'success': False,
         'error': 'Ollama foi removido. Use apenas Google Gemini.'
-    }), 400
+    }), 410  # 410 Gone
 
-# Função antiga (manter por compatibilidade)
-def chat_ollama_old():
+# Função antiga removida
+def _chat_ollama_legacy():
     try:
         pergunta = request.json.get('pergunta')
         modelo = request.json.get('modelo')
@@ -501,20 +491,10 @@ Próximos Passos: {ligacao.get('proximos_passos', 'N/A')}
     
     return '\n'.join(contexto)
 
-# API: Obter modelos disponíveis do Ollama
+# Rota antiga do Ollama removida
 @app.route('/api/ollama/models', methods=['GET'])
 def get_ollama_models():
-    try:
-        response = requests.get('http://localhost:11434/api/tags', timeout=5)
-        if response.status_code == 200:
-            models = response.json().get('models', [])
-            return jsonify({
-                'success': True,
-                'models': [m['name'] for m in models]
-            })
-        return jsonify({'success': False, 'models': []})
-    except:
-        return jsonify({'success': False, 'models': []})
+    return jsonify({'success': False, 'error': 'Ollama removido'}), 410
 
 # API: Listar modelos disponíveis do Google Gemini
 @app.route('/api/gemini/models', methods=['GET'])
@@ -557,31 +537,16 @@ def list_gemini_models():
             'error': str(e)
         })
 
-# API: Verificar status do Ollama
+# Rotas antigas do Ollama removidas
 @app.route('/api/ollama/status', methods=['GET'])
 def get_ollama_status():
-    try:
-        response = requests.get('http://localhost:11434/api/tags', timeout=3)
-        return jsonify({
-            'success': True,
-            'online': response.status_code == 200
-        })
-    except:
-        return jsonify({
-            'success': True,
-            'online': False
-        })
+    return jsonify({'success': False, 'error': 'Ollama removido'}), 410
 
-# API: Iniciar servidor Ollama (Desabilitado em produção online)
 @app.route('/api/ollama/start', methods=['POST'])
 def start_ollama():
-    return jsonify({
-        'success': False,
-        'error': 'Ollama não está disponível em ambiente online. Use apenas Gemini.'
-    })
+    return jsonify({'success': False, 'error': 'Ollama removido'}), 410
 
-# TODO: Remover função antiga quando necessário
-def start_ollama_old():
+def _start_ollama_legacy():
     try:
         # Verificar se já está rodando
         response = requests.get('http://localhost:11434/api/tags', timeout=2)
@@ -624,16 +589,11 @@ def start_ollama_old():
             'error': f'Erro ao iniciar servidor: {str(e)}'
         })
 
-# API: Parar servidor Ollama (Desabilitado em produção online)
 @app.route('/api/ollama/stop', methods=['POST'])
 def stop_ollama():
-    return jsonify({
-        'success': False,
-        'error': 'Ollama não está disponível em ambiente online.'
-    })
+    return jsonify({'success': False, 'error': 'Ollama removido'}), 410
 
-# TODO: Remover função antiga quando necessário
-def stop_ollama_old():
+def _stop_ollama_legacy():
     try:
         # No Windows, tentar parar o processo
         if os.name == 'nt':
@@ -715,8 +675,8 @@ def clear_all_data():
         # Limpar dados de ligações
         save_data({'ligacoes': [], 'clientes': {}})
         
-        # Limpar configurações (manter apenas estrutura básica)
-        save_config({'gemini_api_key': '', 'ollama_model': 'llama2'})
+        # Limpar configurações
+        save_config({'save_ai_conversations': False, 'retention_days': 90})
         
         return jsonify({'success': True, 'message': 'Todos os dados foram limpos'})
     except Exception as e:

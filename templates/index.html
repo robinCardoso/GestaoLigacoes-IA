@@ -431,12 +431,12 @@
             <h2>🤖 Chat Inteligente com IA</h2>
             
             <div id="iaStatusCard" style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-                <h3 style="color: #667eea; margin-bottom: 15px;">⚙️ Configure sua IA primeiro!</h3>
+                <h3 style="color: #667eea; margin-bottom: 15px;">⚙️ Configure sua API Key do Gemini!</h3>
                 <p style="color: #666; margin-bottom: 20px;">
-                    Para usar o chat inteligente, você precisa configurar uma IA (Ollama ou Google Gemini) na página de configurações.
+                    Para usar o chat inteligente, configure a API Key do Google Gemini no arquivo .env
                 </p>
-                <a href="/configuracoes" class="btn" style="width: auto; padding: 12px 30px; text-decoration: none; display: inline-block;">
-                    ⚙️ Ir para Configurações
+                <a href="https://makersuite.google.com/app/apikey" target="_blank" class="btn" style="width: auto; padding: 12px 30px; text-decoration: none; display: inline-block;">
+                    🔑 Obter API Key Gratuita
                 </a>
             </div>
 
@@ -451,8 +451,8 @@
                     <div class="message ai">
                         <strong>🤖 Assistente IA</strong>
                         Olá! Para começar a usar o chat inteligente:<br><br>
-                        1. Clique em "⚙️ Ir para Configurações" acima<br>
-                        2. Configure uma IA (Ollama ou Google Gemini)<br>
+                        1. Configure sua API Key do Google Gemini no arquivo .env<br>
+                        2. Reinicie o servidor (python app.py)<br>
                         3. Volte aqui e faça suas perguntas!<br><br>
                         <strong>Exemplos de perguntas:</strong><br>
                         • "Quais são as principais necessidades do cliente X?"<br>
@@ -488,35 +488,22 @@
                 
                 const statusCard = document.getElementById('iaStatusCard');
                 
-                // Verificar qual IA está configurada
+                // Verificar se Gemini está configurado
                 if (config.active_ia === 'gemini') {
                     iaConfigured = true;
                     statusCard.style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
                     statusCard.innerHTML = `
-                        <h3 style="color: #155724; margin-bottom: 15px;">✅ IA Ativa: Google Gemini</h3>
+                        <h3 style="color: #155724; margin-bottom: 15px;">✅ Google Gemini Ativo</h3>
                         <p style="color: #155724; margin-bottom: 10px;">
-                            <strong>Modelo:</strong> gemini-2.5-flash (Mais recente, Rápido)
+                            <strong>Modelo:</strong> gemini-2.5-flash (Gratuito, Rápido)
                         </p>
-                        <a href="/configuracoes" class="btn" style="width: auto; padding: 8px 20px; text-decoration: none; display: inline-block; background: #28a745;">
-                            ⚙️ Gerenciar Configurações
-                        </a>
-                    `;
-                    enableChat();
-                } else if (config.active_ia === 'ollama' && config.has_ollama) {
-                    iaConfigured = true;
-                    statusCard.style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
-                    statusCard.innerHTML = `
-                        <h3 style="color: #155724; margin-bottom: 15px;">✅ IA Ativa: Ollama</h3>
-                        <p style="color: #155724; margin-bottom: 10px;">
-                            <strong>Modelo:</strong> ${config.ollama_model} (Local)
-                        </p>
-                        <a href="/configuracoes" class="btn" style="width: auto; padding: 8px 20px; text-decoration: none; display: inline-block; background: #28a745;">
-                            ⚙️ Gerenciar Configurações
+                        <a href="/chat" class="btn" style="width: auto; padding: 8px 20px; text-decoration: none; display: inline-block; background: #28a745;">
+                            💬 Chat em Tela Cheia
                         </a>
                     `;
                     enableChat();
                 } else {
-                    // Nenhuma IA configurada
+                    // Gemini não configurado
                     iaConfigured = false;
                 }
             } catch (error) {
@@ -676,24 +663,14 @@
             };
             
             try {
-                // Tentar primeiro com Gemini, depois Ollama
-                let response = await fetch('/api/chat/gemini', {
+                // Usar apenas Gemini
+                const response = await fetch('/api/chat/gemini', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
                 });
                 
-                let result = await response.json();
-                
-                // Se Gemini falhar, tentar Ollama
-                if (!result.success && result.error && result.error.includes('API Key')) {
-                    response = await fetch('/api/chat/ollama', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(data)
-                    });
-                    result = await response.json();
-                }
+                const result = await response.json();
                 
                 document.getElementById('loadingChat').classList.remove('active');
                 
