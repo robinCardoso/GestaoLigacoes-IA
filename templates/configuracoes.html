@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Sistema de Gestão de Ligações</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .help-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .help-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .help-section p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .help-section a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .help-section a:hover {
+            text-decoration: underline;
+        }
+
+        .ollama-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .ollama-status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .ollama-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .ollama-status.checking {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+
+        .status-indicator.checking {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .model-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+
+        .model-item {
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .model-item:hover {
+            background: #e9ecef;
+        }
+
+        .model-item.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .auto-control {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .auto-control h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .auto-control p {
+            color: #856404;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn">← Voltar</a>
+    
+    <div class="container">
+        <header>
+            <h1>⚙️ Configurações</h1>
+            <p class="subtitle">Configure suas IAs e preferências do sistema</p>
+        </header>
+
+        <div class="config-grid">
+            <!-- Configurações do Ollama -->
+            <div class="card">
+                <h2>🏠 Ollama (Local)</h2>
+                
+                <div class="ollama-status" id="ollamaStatus">
+                    <span class="status-indicator checking"></span>
+                    <span>Verificando status...</span>
+                </div>
+
+                <div class="auto-control">
+                    <h4>🤖 Controle Automático</h4>
+                    <p>O sistema pode iniciar e parar o servidor Ollama automaticamente quando você usar o executável (.exe).</p>
+                </div>
+
+                <div class="config-section">
+                    <h3>📥 Instalação do Ollama</h3>
+                    <div class="help-section">
+                        <h4>1. Baixar e Instalar:</h4>
+                        <p>• <a href="https://ollama.ai/download" target="_blank">Windows</a> - Baixar instalador</p>
+                        <p>• <a href="https://ollama.ai/download" target="_blank">Mac</a> - Baixar para macOS</p>
+                        <p>• <a href="https://ollama.ai/download" target="_blank">Linux</a> - Comandos de instalação</p>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>📦 Modelos Disponíveis</h3>
+                    <div class="model-list" id="modelList">
+                        <div class="loading active">
+                            <div class="spinner"></div>
+                            <p>Carregando modelos...</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshModels()">🔄 Atualizar Lista</button>
+                </div>
+
+                <div class="config-section">
+                    <h3>🎯 Modelo Preferido</h3>
+                    <select id="preferredModel">
+                        <option value="llama2">Llama 2 (Recomendado)</option>
+                        <option value="mistral">Mistral (Mais Rápido)</option>
+                        <option value="codellama">Code Llama (Para Código)</option>
+                        <option value="gemma">Gemma (Google)</option>
+                    </select>
+                    <button class="btn" onclick="saveOllamaConfig()">💾 Salvar Configuração</button>
+                </div>
+
+                <div class="config-section">
+                    <h3>🚀 Controle do Servidor</h3>
+                    <button class="btn btn-success" onclick="startOllama()">▶️ Iniciar Servidor</button>
+                    <button class="btn btn-danger" onclick="stopOllama()">⏹️ Parar Servidor</button>
+                    <button class="btn btn-warning" onclick="restartOllama()">🔄 Reiniciar Servidor</button>
+                </div>
+            </div>
+
+            <!-- Configurações do Gemini -->
+            <div class="card">
+                <h2>🌐 Google Gemini (Online)</h2>
+                
+                <div class="config-section">
+                    <h3>🔑 API Key</h3>
+                    <div class="form-group">
+                        <label>Chave da API:</label>
+                        <input type="password" id="geminiApiKey" placeholder="Cole sua API Key aqui">
+                        <div id="geminiKeyStatus" style="margin-top: 5px; font-size: 0.85em;"></div>
+                    </div>
+                    <button class="btn" onclick="saveGeminiKey()">💾 Salvar API Key</button>
+                </div>
+
+                <div class="config-section">
+                    <h3>📥 Como Obter API Key</h3>
+                    <div class="help-section">
+                        <h4>1. Acesse o Google AI Studio:</h4>
+                        <p>• <a href="https://makersuite.google.com/app/apikey" target="_blank">Clique aqui para criar sua chave</a></p>
+                        
+                        <h4>2. Faça login com sua conta Google</h4>
+                        
+                        <h4>3. Clique em "Create API Key"</h4>
+                        
+                        <h4>4. Copie a chave gerada</h4>
+                        
+                        <h4>5. Cole no campo acima e clique "Salvar"</h4>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>💰 Limites Gratuitos</h3>
+                    <div class="help-section">
+                        <p>• <strong>60 requisições por minuto</strong></p>
+                        <p>• <strong>1 milhão de tokens por mês</strong></p>
+                        <p>• <strong>100% gratuito</strong> para uso pessoal</p>
+                        <p>• Sem necessidade de cartão de crédito</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurações Gerais -->
+        <div class="card">
+            <h2>⚙️ Configurações Gerais</h2>
+            
+            <div class="config-grid">
+                <div class="config-section">
+                    <h3>🌐 Servidor Web</h3>
+                    <div class="form-group">
+                        <label>Porta do Servidor:</label>
+                        <input type="number" id="serverPort" value="5000" min="1000" max="65535">
+                    </div>
+                    <div class="form-group">
+                        <label>Auto-abrir Navegador:</label>
+                        <select id="autoOpenBrowser">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="saveGeneralConfig()">💾 Salvar Configurações</button>
+                </div>
+
+                <div class="config-section">
+                    <h3>💾 Backup e Dados</h3>
+                    <button class="btn btn-secondary" onclick="exportData()">📤 Exportar Dados</button>
+                    <button class="btn btn-warning" onclick="importData()">📥 Importar Dados</button>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        // Carregar configurações ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+            checkOllamaStatus();
+            loadModels();
+        });
+
+        // Carregar configurações salvas
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                // Carregar API Key do Gemini
+                if (config.gemini_api_key) {
+                    document.getElementById('geminiApiKey').value = config.gemini_api_key;
+                    document.getElementById('geminiKeyStatus').innerHTML = '<span style="color: #28a745;">✅ API Key carregada</span>';
+                }
+                
+                // Carregar modelo preferido
+                if (config.ollama_model) {
+                    document.getElementById('preferredModel').value = config.ollama_model;
+                }
+            } catch (error) {
+                console.log('Erro ao carregar configurações:', error);
+            }
+        }
+
+        // Verificar status do Ollama
+        async function checkOllamaStatus() {
+            const statusDiv = document.getElementById('ollamaStatus');
+            statusDiv.innerHTML = '<span class="status-indicator checking"></span><span>Verificando...</span>';
+            statusDiv.className = 'ollama-status checking';
+            
+            try {
+                const response = await fetch('/api/ollama/status');
+                const data = await response.json();
+                
+                if (data.online) {
+                    statusDiv.innerHTML = '<span class="status-indicator online"></span><span>✅ Servidor Online</span>';
+                    statusDiv.className = 'ollama-status online';
+                } else {
+                    statusDiv.innerHTML = '<span class="status-indicator offline"></span><span>❌ Servidor Offline</span>';
+                    statusDiv.className = 'ollama-status offline';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="status-indicator offline"></span><span>❌ Servidor Offline</span>';
+                statusDiv.className = 'ollama-status offline';
+            }
+        }
+
+        // Carregar modelos disponíveis
+        async function loadModels() {
+            const modelList = document.getElementById('modelList');
+            modelList.innerHTML = '<div class="loading active"><div class="spinner"></div><p>Carregando modelos...</p></div>';
+            
+            try {
+                const response = await fetch('/api/ollama/models');
+                const data = await response.json();
+                
+                if (data.success && data.models.length > 0) {
+                    modelList.innerHTML = data.models.map(model => 
+                        `<div class="model-item" onclick="selectModel('${model}')">${model}</div>`
+                    ).join('');
+                } else {
+                    modelList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhum modelo encontrado</p>';
+                }
+            } catch (error) {
+                modelList.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Erro ao carregar modelos</p>';
+            }
+        }
+
+        // Atualizar lista de modelos
+        function refreshModels() {
+            loadModels();
+            checkOllamaStatus();
+        }
+
+        // Selecionar modelo
+        function selectModel(modelName) {
+            document.querySelectorAll('.model-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            document.getElementById('preferredModel').value = modelName;
+        }
+
+        // Salvar configuração do Ollama
+        async function saveOllamaConfig() {
+            const model = document.getElementById('preferredModel').value;
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ollama_model: model
+                    })
+                });
+                
+                const result = await response.json();
+                showStatus('✅ Configuração do Ollama salva!', 'success');
+            } catch (error) {
+                showStatus('❌ Erro ao salvar configuração', 'error');
+            }
+        }
+
+        // Salvar API Key do Gemini
+        async function saveGeminiKey() {
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            
+            if (!apiKey) {
+                showStatus('❌ Por favor, insira uma API Key válida', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        gemini_api_key: apiKey
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('geminiKeyStatus').innerHTML = '<span style="color: #28a745;">✅ API Key salva com sucesso!</span>';
+                    showStatus('✅ API Key salva com sucesso!', 'success');
+                } else {
+                    showStatus('❌ Erro ao salvar API Key', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Erro ao salvar API Key', 'error');
+            }
+        }
+
+        // Iniciar servidor Ollama
+        async function startOllama() {
+            showStatus('🚀 Iniciando servidor Ollama...', 'info');
+            
+            try {
+                const response = await fetch('/api/ollama/start', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Servidor Ollama iniciado!', 'success');
+                    setTimeout(checkOllamaStatus, 2000);
+                } else {
+                    showStatus(`❌ Erro: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Erro ao iniciar servidor', 'error');
+            }
+        }
+
+        // Parar servidor Ollama
+        async function stopOllama() {
+            showStatus('⏹️ Parando servidor Ollama...', 'info');
+            
+            try {
+                const response = await fetch('/api/ollama/stop', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Servidor Ollama parado!', 'success');
+                    setTimeout(checkOllamaStatus, 2000);
+                } else {
+                    showStatus(`❌ Erro: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Erro ao parar servidor', 'error');
+            }
+        }
+
+        // Reiniciar servidor Ollama
+        async function restartOllama() {
+            showStatus('🔄 Reiniciando servidor Ollama...', 'info');
+            
+            try {
+                await stopOllama();
+                setTimeout(async () => {
+                    await startOllama();
+                }, 3000);
+            } catch (error) {
+                showStatus('❌ Erro ao reiniciar servidor', 'error');
+            }
+        }
+
+        // Salvar configurações gerais
+        async function saveGeneralConfig() {
+            const port = document.getElementById('serverPort').value;
+            const autoOpen = document.getElementById('autoOpenBrowser').value;
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        server_port: port,
+                        auto_open_browser: autoOpen === 'true'
+                    })
+                });
+                
+                const result = await response.json();
+                showStatus('✅ Configurações gerais salvas!', 'success');
+            } catch (error) {
+                showStatus('❌ Erro ao salvar configurações', 'error');
+            }
+        }
+
+        // Exportar dados
+        async function exportData() {
+            try {
+                const response = await fetch('/api/export');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_ligacoes_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showStatus('✅ Dados exportados com sucesso!', 'success');
+            } catch (error) {
+                showStatus('❌ Erro ao exportar dados', 'error');
+            }
+        }
+
+        // Importar dados
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const text = await file.text();
+                    try {
+                        const response = await fetch('/api/import', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: text
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showStatus('✅ Dados importados com sucesso!', 'success');
+                        } else {
+                            showStatus('❌ Erro ao importar dados', 'error');
+                        }
+                    } catch (error) {
+                        showStatus('❌ Erro ao importar dados', 'error');
+                    }
+                }
+            };
+            input.click();
+        }
+
+        // Limpar todos os dados
+        async function clearAllData() {
+            if (!confirm('⚠️ ATENÇÃO: Isso irá apagar TODOS os dados (ligações, configurações). Tem certeza?')) {
+                return;
+            }
+            
+            if (!confirm('⚠️ ÚLTIMA CONFIRMAÇÃO: Esta ação NÃO pode ser desfeita!')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/clear', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Todos os dados foram apagados!', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showStatus('❌ Erro ao limpar dados', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Erro ao limpar dados', 'error');
+            }
+        }
+
+        // Mostrar mensagem de status
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
