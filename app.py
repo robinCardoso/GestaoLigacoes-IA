@@ -64,11 +64,23 @@ def configuracoes():
 @app.route('/api/config', methods=['GET'])
 def get_config():
     config = load_config()
-    # Retornar apenas se a API key existe (não a chave em si por segurança)
+    
+    # Verificar qual IA está configurada
+    has_gemini = bool(config.get('gemini_api_key'))
+    has_ollama = False
+    
+    try:
+        response = requests.get('http://localhost:11434/api/tags', timeout=2)
+        has_ollama = response.status_code == 200
+    except:
+        pass
+    
     return jsonify({
-        'has_gemini_key': bool(config.get('gemini_api_key')),
+        'has_gemini_key': has_gemini,
         'gemini_api_key': config.get('gemini_api_key', ''),
-        'ollama_model': config.get('ollama_model', 'llama2')
+        'ollama_model': config.get('ollama_model', 'llama2'),
+        'has_ollama': has_ollama,
+        'active_ia': 'gemini' if has_gemini else ('ollama' if has_ollama else None)
     })
 
 # API: Salvar configurações
@@ -225,8 +237,8 @@ PERGUNTA DO USUÁRIO: {pergunta}
 
 Analise o histórico e responda de forma clara, objetiva e útil. Identifique padrões, necessidades e oportunidades."""
 
-        # Chamar Google Gemini API (usando gemini-1.5-flash - mais rápido e gratuito)
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}'
+        # Chamar Google Gemini API (usando gemini-pro - estável)
+        url = f'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}'
         
         response = requests.post(
             url,
@@ -246,7 +258,7 @@ Analise o histórico e responda de forma clara, objetiva e útil. Identifique pa
             return jsonify({
                 'success': True,
                 'resposta': resposta_texto,
-                'modelo': 'gemini-1.5-flash'
+                'modelo': 'gemini-pro'
             })
         else:
             return jsonify({

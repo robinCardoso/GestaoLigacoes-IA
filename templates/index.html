@@ -423,7 +423,7 @@
         <div class="card">
             <h2>🤖 Chat Inteligente com IA</h2>
             
-            <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+            <div id="iaStatusCard" style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
                 <h3 style="color: #667eea; margin-bottom: 15px;">⚙️ Configure sua IA primeiro!</h3>
                 <p style="color: #666; margin-bottom: 20px;">
                     Para usar o chat inteligente, você precisa configurar uma IA (Ollama ou Google Gemini) na página de configurações.
@@ -478,10 +478,38 @@
                 const response = await fetch('/api/config');
                 const config = await response.json();
                 
-                // Verificar se tem API Key do Gemini ou Ollama configurado
-                if (config.gemini_api_key || config.ollama_model) {
+                const statusCard = document.getElementById('iaStatusCard');
+                
+                // Verificar qual IA está configurada
+                if (config.active_ia === 'gemini') {
                     iaConfigured = true;
+                    statusCard.style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
+                    statusCard.innerHTML = `
+                        <h3 style="color: #155724; margin-bottom: 15px;">✅ IA Ativa: Google Gemini</h3>
+                        <p style="color: #155724; margin-bottom: 10px;">
+                            <strong>Modelo:</strong> gemini-pro (Online)
+                        </p>
+                        <a href="/configuracoes" class="btn" style="width: auto; padding: 8px 20px; text-decoration: none; display: inline-block; background: #28a745;">
+                            ⚙️ Gerenciar Configurações
+                        </a>
+                    `;
                     enableChat();
+                } else if (config.active_ia === 'ollama' && config.has_ollama) {
+                    iaConfigured = true;
+                    statusCard.style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
+                    statusCard.innerHTML = `
+                        <h3 style="color: #155724; margin-bottom: 15px;">✅ IA Ativa: Ollama</h3>
+                        <p style="color: #155724; margin-bottom: 10px;">
+                            <strong>Modelo:</strong> ${config.ollama_model} (Local)
+                        </p>
+                        <a href="/configuracoes" class="btn" style="width: auto; padding: 8px 20px; text-decoration: none; display: inline-block; background: #28a745;">
+                            ⚙️ Gerenciar Configurações
+                        </a>
+                    `;
+                    enableChat();
+                } else {
+                    // Nenhuma IA configurada
+                    iaConfigured = false;
                 }
             } catch (error) {
                 console.log('Erro ao verificar configurações:', error);
