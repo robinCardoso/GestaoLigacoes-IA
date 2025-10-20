@@ -451,6 +451,14 @@ def clear_all_data():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # Configurar encoding do console para UTF-8
+    import sys
+    if sys.platform == 'win32':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except:
+            pass
+    
     # Verificar se deve controlar Ollama automaticamente
     auto_ollama = os.environ.get('AUTO_OLLAMA', 'false').lower() == 'true'
     
@@ -458,17 +466,22 @@ if __name__ == '__main__':
         try:
             from ollama_manager import setup_ollama_auto_control
             setup_ollama_auto_control()
-            print("🤖 Controle automático do Ollama ativado!")
+            print("Controle automatico do Ollama ativado!")
         except ImportError:
-            print("⚠️ Módulo ollama_manager não encontrado")
+            print("Modulo ollama_manager nao encontrado")
     
-    print("🚀 Sistema de Gestão de Ligações com IA iniciado!")
-    print("📱 Acesse: http://localhost:5000")
-    print("⚙️ Configurações: http://localhost:5000/configuracoes")
-    print("\n💡 Dicas:")
-    print("   - Para usar Ollama: certifique-se de executar 'ollama serve'")
-    print("   - Para usar Gemini: obtenha uma API key gratuita em https://makersuite.google.com/app/apikey")
-    print("   - Acesse /configuracoes para gerenciar IAs e dados")
+    print("=" * 60)
+    print("Sistema de Gestao de Ligacoes com IA iniciado!")
+    print("=" * 60)
+    print("Acesse: http://localhost:5000")
+    print("Configuracoes: http://localhost:5000/configuracoes")
+    print("\nDicas:")
+    print("  - Para usar Ollama: certifique-se de executar 'ollama serve'")
+    print("  - Para usar Gemini: obtenha uma API key gratuita")
+    print("    em https://makersuite.google.com/app/apikey")
+    print("  - Acesse /configuracoes para gerenciar IAs e dados")
+    print("=" * 60)
+    print()
     
     app.run(debug=True, port=5000)
 
