@@ -13,6 +13,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
+# API Key do Gemini
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+
 # Tentar importar Supabase
 USE_SUPABASE = False
 try:
@@ -121,29 +124,18 @@ def adicionar_conversa(conversa_data):
         save_conversas(conv)
         return conversa_data
 
-# Carregar configurações (fallback local)
+# Carregar configurações (simplificado - apenas para conversas)
 def load_config_local():
     """Carrega configurações do arquivo local"""
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-            # Decodificar API Key se existir
-            if 'gemini_api_key' in config and config['gemini_api_key']:
-                try:
-                    config['gemini_api_key'] = base64.b64decode(config['gemini_api_key']).decode('utf-8')
-                except:
-                    config['gemini_api_key'] = ''
-            return config
-    return {'gemini_api_key': '', 'ollama_model': 'mistral', 'save_ai_conversations': False, 'retention_days': 90}
+            return json.load(f)
+    return {'save_ai_conversations': False, 'retention_days': 90}
 
 def save_config_local(config):
     """Salva configurações no arquivo local"""
-    config_to_save = config.copy()
-    if 'gemini_api_key' in config_to_save and config_to_save['gemini_api_key']:
-        config_to_save['gemini_api_key'] = base64.b64encode(config_to_save['gemini_api_key'].encode('utf-8')).decode('utf-8')
-    
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(config_to_save, f, ensure_ascii=False, indent=2)
+        json.dump(config, f, ensure_ascii=False, indent=2)
 
 # Funções de config com suporte a Supabase
 def load_config():
@@ -152,13 +144,7 @@ def load_config():
         user_id = get_user_id()
         config = obter_config_usuario(user_id)
         if not config:
-            config = {'gemini_api_key': '', 'ollama_model': 'mistral', 'save_ai_conversations': False, 'retention_days': 90}
-        # Decodificar API Key se existir
-        if 'gemini_api_key' in config and config['gemini_api_key']:
-            try:
-                config['gemini_api_key'] = base64.b64decode(config['gemini_api_key']).decode('utf-8')
-            except:
-                pass
+            config = {'save_ai_conversations': False, 'retention_days': 90}
         return config
     else:
         return load_config_local()
@@ -167,10 +153,7 @@ def save_config(config):
     """Salva configurações (Supabase ou local)"""
     if USE_SUPABASE:
         user_id = get_user_id()
-        config_to_save = config.copy()
-        if 'gemini_api_key' in config_to_save and config_to_save['gemini_api_key']:
-            config_to_save['gemini_api_key'] = base64.b64encode(config_to_save['gemini_api_key'].encode('utf-8')).decode('utf-8')
-        return salvar_config_usuario(user_id, config_to_save)
+        return salvar_config_usuario(user_id, config)
     else:
         return save_config_local(config)
 
@@ -329,9 +312,16 @@ def get_clientes():
             clientes[cliente_nome] = {'nome': cliente_nome}
     return jsonify(list(clientes.values()))
 
-# API: Chat com IA (Ollama)
+# API: Chat com IA (Ollama - REMOVIDO)
 @app.route('/api/chat/ollama', methods=['POST'])
 def chat_ollama():
+    return jsonify({
+        'success': False,
+        'error': 'Ollama foi removido. Use apenas Google Gemini.'
+    }), 400
+
+# Função antiga (manter por compatibilidade)
+def chat_ollama_old():
     try:
         pergunta = request.json.get('pergunta')
         modelo = request.json.get('modelo')
@@ -426,17 +416,14 @@ Agora responda seguindo as instruções acima."""
 def chat_gemini():
     try:
         pergunta = request.json.get('pergunta')
-        api_key = request.json.get('api_key')
         
-        # Se não veio no request, carregar do config salvo
-        if not api_key:
-            config = load_config()
-            api_key = config.get('gemini_api_key', '')
+        # Usar API Key do .env
+        api_key = GEMINI_API_KEY
         
         if not api_key:
             return jsonify({
                 'success': False,
-                'error': 'API Key do Google Gemini não configurada. Vá em Configurações para salvar sua chave.'
+                'error': 'API Key do Google Gemini não configurada. Configure GEMINI_API_KEY no arquivo .env'
             }), 400
         
         # Carregar todo o histórico de ligações
@@ -744,27 +731,22 @@ if __name__ == '__main__':
         except:
             pass
     
-    # Verificar se deve controlar Ollama automaticamente
-    auto_ollama = os.environ.get('AUTO_OLLAMA', 'false').lower() == 'true'
-    
-    if auto_ollama:
-        try:
-            from ollama_manager import setup_ollama_auto_control
-            setup_ollama_auto_control()
-            print("Controle automatico do Ollama ativado!")
-        except ImportError:
-            print("Modulo ollama_manager nao encontrado")
-    
     print("=" * 60)
-    print("Sistema de Gestao de Ligacoes com IA iniciado!")
+    print("Sistema de Gestao de Ligacoes com IA - Powered by Google Gemini")
     print("=" * 60)
     print("Acesse: http://localhost:5000")
     print("Configuracoes: http://localhost:5000/configuracoes")
-    print("\nDicas:")
-    print("  - Para usar Ollama: certifique-se de executar 'ollama serve'")
-    print("  - Para usar Gemini: obtenha uma API key gratuita")
-    print("    em https://makersuite.google.com/app/apikey")
-    print("  - Acesse /configuracoes para gerenciar IAs e dados")
+    print("\nStatus:")
+    if GEMINI_API_KEY:
+        print("  ✓ API Key do Gemini configurada")
+    else:
+        print("  ✗ API Key do Gemini NAO configurada")
+        print("    Configure GEMINI_API_KEY no arquivo .env")
+        print("    Obtenha em: https://makersuite.google.com/app/apikey")
+    if USE_SUPABASE:
+        print("  ✓ Supabase conectado (dados online)")
+    else:
+        print("  ✓ Armazenamento local (JSON)")
     print("=" * 60)
     print()
     

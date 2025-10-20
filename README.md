@@ -1,6 +1,6 @@
 # 🚀 Sistema de Gestão de Ligações com IA
 
-Sistema web 100% online para gerenciar ligações de clientes com assistente de IA integrado (Google Gemini).
+Sistema web 100% online para gerenciar ligações de clientes com assistente de IA integrado (**Google Gemini**).
 
 [![Deploy no Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/robinCardoso/GestaoLigacoes-IA)
 
@@ -18,8 +18,8 @@ Sistema web 100% online para gerenciar ligações de clientes com assistente de 
 
 - **Frontend**: HTML, CSS, JavaScript
 - **Backend**: Python (Flask)
-- **IA**: Google Gemini API
-- **Banco de Dados**: Supabase (PostgreSQL)
+- **IA**: Google Gemini API (100% gratuito)
+- **Banco de Dados**: Supabase (PostgreSQL) ou JSON local
 - **Deploy**: Vercel
 - **Autenticação**: Session-based (UUID por usuário)
 
@@ -72,7 +72,7 @@ pip install -r requirements.txt
 
 # Configure as variáveis de ambiente
 cp env.example .env
-# Edite .env com suas credenciais
+# Edite .env e adicione sua GEMINI_API_KEY
 
 # Execute o servidor
 python app.py
@@ -80,13 +80,18 @@ python app.py
 
 Acesse: `http://localhost:5000`
 
+**Nota**: A API Key do Gemini é **obrigatória**. O Supabase é opcional (sem ele, usa JSON local).
+
 ## 📝 Configuração
 
-### Google Gemini API
+### Google Gemini API (Obrigatório)
 
 1. Acesse [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Crie uma nova API Key
-3. Configure no sistema em **⚙️ Configurações**
+2. Crie uma nova API Key (100% gratuita)
+3. Adicione no arquivo `.env`:
+   ```
+   GEMINI_API_KEY=sua-chave-aqui
+   ```
 
 ### Armazenamento
 
